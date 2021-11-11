@@ -1,0 +1,56 @@
+<!DOCTYPE HTML>
+<title>click pointerId without other event listeners</title>
+<head>
+  <meta name="variant" content="?mouse">
+  <meta name="variant" content="?pen">
+  <meta name="variant" content="?touch">
+  <script src="/resources/testharness.js"></script>
+  <script src="/resources/testharnessreport.js"></script>
+  <script src="/resources/testdriver.js"></script>
+  <script src="/resources/testdriver-actions.js"></script>
+  <script src="/resources/testdriver-vendor.js"></script>
+</head>
+
+<body>
+  <h1>Test for click pointerId without other event listeners</h1>
+  <ol id="instructions">
+    <li>Click anywhere in the document.
+  </ol>
+
+  <script>
+  'use strict';
+  const pointer_type = location.search.substring(1);
+  const test_pointer = pointer_type + "TestPointer";
+
+  function getEvent(event_type) {
+    return new Promise(resolve => {
+      document.body.addEventListener(event_type, e => resolve(e), {once: true});
+    });
+  }
+
+  promise_test(async () => {
+    let click_event = getEvent("click");
+    await new test_driver.Actions()
+      .addPointer(test_pointer, pointer_type)
+      .pointerMove(0,0, {origin:document.body, sourceName:test_pointer})
+      .pointerDown({sourceName:test_pointer})
+      .pointerUp({sourceName:test_pointer})
+      .send();
+    let id1 = (await click_event).pointerId;
+    assert_true(id1 >= 0, "first click has a valid pointerId");
+
+    click_event = getEvent("click");
+    await new test_driver.Actions()
+      .addPointer(test_pointer, pointer_type)
+      .pointerMove(0,0, {origin:document.body, sourceName:test_pointer})
+      .pointerDown({sourceName:test_pointer})
+      .pointerUp({sourceName:test_pointer})
+      .send();
+    let id2 = (await click_event).pointerId;
+    assert_true(id2 >= 0, "second click has a valid pointerId");
+
+    if (pointer_type !== "mouse")
+      assert_not_equals(id2, id1, "non-mouse click pointerIds change every time");
+  }, "click using " + pointer_type + " is a PointerEvent");
+  </script>
+</body>
